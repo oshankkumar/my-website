@@ -2,17 +2,26 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/sirupsen/logrus"
 	"net"
 	"net/http"
+
+	"github.com/gorilla/handlers"
+	"github.com/sirupsen/logrus"
 )
 
 func health(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(&struct {
+	err := json.NewEncoder(w).Encode(&struct {
 		Health  string `json:"health"`
 		LocalIP string `json:"IP"`
 	}{"up", getLocalIP()})
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+}
+
+func Logging(next http.Handler) http.Handler {
+	return handlers.LoggingHandler(logrus.NewEntry(logrus.StandardLogger()).Writer(), next)
 }
 
 func main() {
@@ -20,7 +29,8 @@ func main() {
 	logrus.WithField("ip", ipAddr).Info("starting server")
 	http.HandleFunc("/health", health)
 	http.Handle("/", http.FileServer(http.Dir("web")))
-	logrus.Fatal(http.ListenAndServe(":8080", nil))
+
+	logrus.Fatal(http.ListenAndServe(":8080", Logging(http.DefaultServeMux)))
 }
 
 func getLocalIP() string {

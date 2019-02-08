@@ -7,6 +7,6 @@ FROM alpine:latest
 RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 COPY --from=build /go/src/github.com/oshankkumar/my-website/app .
-COPY --from=build /go/src/github.com/oshankkumar/my-website/web .
+COPY --from=build /go/src/github.com/oshankkumar/my-website/web ./web
 ENV PORT=8080
 CMD ["./app"]
